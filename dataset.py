@@ -8,7 +8,7 @@ import random
 import torchvision.transforms as transforms
 
 def is_image_file(filename):
-    return any(filename.endswith(extension) for extension in [".png", ".jpg", ".jpeg"])
+    return any(filename.endswith(extension) for extension in [".png", ".jpg", ".tif"])
     
 def readlinesFromFile(path, datasize):
     print("Load from file %s" % path)
@@ -37,49 +37,9 @@ def loadFromFile(path, datasize):
     f.close()  
     return data, label     
     
-def load_video_image(file_path, input_height=128, input_width=None, output_height=128, output_width=None,
-              crop_height=None, crop_width=None, is_random_crop=True, is_mirror=True,
-              is_gray=False, scale=1.0, is_scale_back=False):
-    
-    if input_width is None:
-      input_width = input_height
-    if output_width is None:
-      output_width = output_height
-    if crop_width is None:
-      crop_width = crop_height
-    
-    img = Image.open(file_path)
-    if is_gray is False and img.mode is not 'RGB':
-      img = img.convert('RGB')
-    if is_gray and img.mode is not 'L':
-      img = img.convert('L')
-      
-    if is_mirror and random.randint(0,1) is 0:
-      img = ImageOps.mirror(img)    
-      
-    if input_height is not None:
-      img = img.resize((input_width, input_height),Image.BICUBIC)
-      
-    if crop_height is not None:
-      [w, h] = img.size
-      if is_random_crop:
-        #print([w,cropSize])
-        cx1 = random.randint(0, w-crop_width)
-        cx2 = w - crop_width - cx1
-        cy1 = random.randint(0, h-crop_height) 
-        cy2 = h - crop_height - cy1
-      else:
-        cx2 = cx1 = int(round((w-crop_width)/2.))
-        cy2 = cy1 = int(round((h-crop_height)/2.))
-      img = ImageOps.crop(img, (cx1, cy1, cx2, cy2))
-      
-    #print(scale)
-    img = img.resize((output_width, output_height),Image.BICUBIC)
-    img_lr = img.resize((int(output_width/scale),int(output_height/scale)),Image.BICUBIC)
-    if is_scale_back:
-      return img_lr.resize((output_width, output_height),Image.BICUBIC), img
-    else:
-      return img_lr, img
+def load_image(hr_file_path,lr_file_path):
+    hr_img = Image.open(hr_file_path)
+    lr_img = Image.open(lr_file_path)
       
       
 class ImageDatasetFromFile(data.Dataset):
@@ -107,16 +67,9 @@ class ImageDatasetFromFile(data.Dataset):
                                ])
 
     def __getitem__(self, index):
-    
-        if self.is_mirror:
-          is_mirror = random.randint(0,1) is 0
-        else:
-          is_mirror = False
           
-        lr, hr = load_video_image(join(self.root_path, self.image_filenames[index]), 
-                                  self.input_height, self.input_width, self.output_height, self.output_width,
-                                  self.crop_height, self.crop_width, self.is_random_crop, is_mirror,
-                                  self.is_gray, self.upscale, self.is_scale_back)
+        lr, hr = load_image(join(self.root_path, self.image_filenames[index]),
+                            join(self.root_path, self.image_filenames[index]))
         
         
         input = self.input_transform(lr)
