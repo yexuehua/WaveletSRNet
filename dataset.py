@@ -33,10 +33,11 @@ def load_image(hr_file_path,lr_file_path):
       
       
 class ImageDatasetFromFile(data.Dataset):
-    def __init__(self, image_list, root_path):
+    def __init__(self, image_list, label_list, root_path):
         super(ImageDatasetFromFile, self).__init__()
                 
-        self.image_filenames = image_list        
+        self.image_filenames = image_list
+        self.label_filenames = label_list
         self.root_path = root_path
                        
         self.input_transform = transforms.Compose([ 
@@ -47,7 +48,7 @@ class ImageDatasetFromFile(data.Dataset):
     def __getitem__(self, index):
           
         lr, hr = load_image(join(self.root_path, self.image_filenames[index]),
-                            join(self.root_path, self.image_filenames[index]))
+                            join(self.root_path, self.label_filenames[index]))
         
         
         input = self.input_transform(lr)

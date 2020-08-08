@@ -123,19 +123,16 @@ def main():
     optimizer_sr = optim.Adam(srnet.parameters(), lr=opt.lr, betas=(opt.momentum, 0.999), weight_decay=0.0005)
     
     #-----------------load dataset--------------------------
-    train_list, _ = loadFromFile(opt.trainfiles, opt.trainsize)
-    print(len(train_list))
-    train_set = ImageDatasetFromFile(train_list, opt.dataroot)    
+    train_list, train_label_list = loadFromFile(opt.trainfiles, opt.trainsize)
+    train_set = ImageDatasetFromFile(train_list, train_label_list, opt.dataroot)
     train_data_loader = torch.utils.data.DataLoader(train_set, batch_size=opt.batchSize,
                                      shuffle=True, num_workers=int(opt.workers))
     
-    test_list, _ = loadFromFile(opt.testfiles, opt.testsize)
-    test_set = ImageDatasetFromFile(test_list, opt.testroot)    
+    test_list, test_label_lists = loadFromFile(opt.testfiles, opt.testsize)
+    test_set = ImageDatasetFromFile(test_list, test_label_lists, opt.testroot)
     test_data_loader = torch.utils.data.DataLoader(test_set, batch_size=opt.test_batchSize,
                                          shuffle=False, num_workers=int(opt.workers))
-                                         
-    
-        
+
     start_time = time.time()
     srnet.train()
     #----------------Train by epochs--------------------------
