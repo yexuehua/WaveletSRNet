@@ -8,7 +8,7 @@ import torch.nn.parallel
 import torch.backends.cudnn as cudnn
 import torch.optim as optim
 import torch.utils.data
-import torchvision.datasets as dset
+#import torchvision.datasets as dset
 from torch.utils.data import DataLoader
 from dataset import *
 import time
@@ -25,12 +25,12 @@ parser.add_argument('--test', action='store_true', help='enables test during tra
 parser.add_argument('--mse_avg', action='store_true', help='enables mse avg')
 parser.add_argument('--num_layers_res', type=int, help='number of the layers in residual block', default=2)
 parser.add_argument('--nrow', type=int, help='number of the rows to save images', default=10)
-parser.add_argument('--trainfiles', default="path/celeba/train.list", type=str, help='the list of training files')
-parser.add_argument('--dataroot', default="path/celeba", type=str, help='path to dataset')
-parser.add_argument('--testfiles', default="path/test.list", type=str, help='the list of training files')
-parser.add_argument('--testroot', default="path/celeba", type=str, help='path to dataset')
-parser.add_argument('--trainsize', type=int, help='number of training data', default=162770)
-parser.add_argument('--testsize', type=int, help='number of testing data', default=19962)
+parser.add_argument('--trainfiles', default="train.csv", type=str, help='the list of training files')
+parser.add_argument('--dataroot', default="data/overlay", type=str, help='path to dataset')
+parser.add_argument('--testfiles', default="test.csv", type=str, help='the list of training files')
+parser.add_argument('--testroot', default="data/overlay", type=str, help='path to dataset')
+parser.add_argument('--trainsize', type=int, help='number of training data',default=80)
+parser.add_argument('--testsize', type=int, help='number of testing data',default=20)
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=2)
 parser.add_argument('--batchSize', type=int, default=64, help='input batch size')
 parser.add_argument('--test_batchSize', type=int, default=64, help='test batch size')
@@ -123,23 +123,14 @@ def main():
     optimizer_sr = optim.Adam(srnet.parameters(), lr=opt.lr, betas=(opt.momentum, 0.999), weight_decay=0.0005)
     
     #-----------------load dataset--------------------------
-    train_list, _ = loadFromFile(opt.trainfiles, opt.trainsize)    
-    train_set = ImageDatasetFromFile(train_list, opt.dataroot, 
-              input_height=opt.input_height, input_width=opt.input_width,
-              output_height=opt.output_height, output_width=opt.output_width,
-              crop_height=opt.crop_height, crop_width=opt.crop_width,
-              is_random_crop=True, is_mirror=True, is_gray=False, 
-              upscale=mag, is_scale_back=is_scale_back)    
+    train_list, _ = loadFromFile(opt.trainfiles, opt.trainsize)
+    print(len(train_list))
+    train_set = ImageDatasetFromFile(train_list, opt.dataroot)    
     train_data_loader = torch.utils.data.DataLoader(train_set, batch_size=opt.batchSize,
                                      shuffle=True, num_workers=int(opt.workers))
     
     test_list, _ = loadFromFile(opt.testfiles, opt.testsize)
-    test_set = ImageDatasetFromFile(test_list, opt.testroot, 
-                  input_height=opt.output_height, input_width=opt.output_width,
-                  output_height=opt.output_height, output_width=opt.output_width,
-                  crop_height=None, crop_width=None,
-                  is_random_crop=False, is_mirror=False, is_gray=False, 
-                  upscale=mag, is_scale_back=is_scale_back)    
+    test_set = ImageDatasetFromFile(test_list, opt.testroot)    
     test_data_loader = torch.utils.data.DataLoader(test_set, batch_size=opt.test_batchSize,
                                          shuffle=False, num_workers=int(opt.workers))
                                          

@@ -4,7 +4,7 @@ import cv2
 import os
 from tqdm import tqdm
 
-scale = 2048
+scale = 512
 def dye(img, color="red"):
     # get index of channel
     idx = color_dict[color]
