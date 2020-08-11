@@ -7,18 +7,19 @@ from PIL import Image, ImageOps
 import random
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as F
-
 import pandas as pd
 
 
 def is_image_file(filename):
     return any(filename.endswith(extension) for extension in [".png", ".jpg", ".tif"])
-    
+
+
 def readlinesFromFile(path, datasize):
     print("Load from file %s" % path)
     df = pd.read_csv(path)
     return df["name"].values
-    
+
+
 def loadFromFile(path, datasize):
     if path is None:
       return None, None
@@ -28,7 +29,8 @@ def loadFromFile(path, datasize):
     data = df["overlay256"].values
     label = df["overlay512"].values
     return data, label     
-    
+
+
 def load_image(lr_file_path,hr_file_path):
     hr_img = Image.open(hr_file_path)
     lr_img = Image.open(lr_file_path)
@@ -36,13 +38,26 @@ def load_image(lr_file_path,hr_file_path):
 
 
 def my_transfroms(lr,hr,crop_size=(128,128),scale=2):
-    w,h = lr.size
-    tw,th = crop_size
-    if w==tw and h==th:
-        return F.crop(lr, 0, 0, w, h), F.crop(hr, 0, 0, scale*w, scale*h)
+    """
+    Args lr: low resolution Image
+         hr: high resolution Image
+         crop_size: output size
+    return: cropped image alina to the output size
+    """
+    w, h = lr.size #get the original size
+    tw, th = crop_size
+
+    if w == tw and h == th:
+        lr_crop = F.crop(lr, 0, 0, w, h)
+        hr_crop = F.crop(hr, 0, 0, scale*w, scale*h)
+        return F.to_tensor(lr_crop), F.to_tensor(hr_crop)
+
     i = random.randint(0, h-th)
     j = random.randint(0, w-tw)
-    return F.crop(lr, i, j, th, tw), F.crop(hr, 2*i, 2*j, scale*th, scale*tw)
+    lr_crop = F.crop(lr, i, j, th, tw)
+    hr_crop = F.crop(hr, 2*i, 2*j, scale*th, scale*tw)
+
+    return F.to_tensor(lr_crop), F.to_tensor(hr_crop)
       
 class ImageDatasetFromFile(data.Dataset):
     def __init__(self, image_list, label_list, root_path):
