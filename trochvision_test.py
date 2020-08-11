@@ -13,14 +13,18 @@ def my_transfroms(lr,hr,crop_size=(128,128),scale=2):
     j = random.randint(0, w-tw)
     return F.crop(lr, i, j, th, tw), F.crop(hr, 2*i, 2*j, scale*th, scale*tw)
 
+def test_myrandomcrop():
+    top_path = r"C:\Users\212774000\Documents\python\gitclone\SR\Cell_SR\data\overlay256\0_overlay.tif"
+    h_top_path = r"C:\Users\212774000\Documents\python\gitclone\SR\Cell_SR\data\overlay512\0_overlay.tif"
+    lr_img = Image.open(top_path)
+    hr_img = Image.open(h_top_path)
+    lr, hr = my_transfroms(lr_img, hr_img)
+    # trans = transforms.Compose([transforms.RandomCrop(1500,padding=True,pad_if_needed=True)])
+    # out = trans(img)
+    print(lr.size, hr.size)
+    lr.show()
+    hr.show()
 
-top_path = r"C:\Users\212774000\Documents\python\gitclone\SR\Cell_SR\data\overlay256\0_overlay.tif"
-h_top_path = r"C:\Users\212774000\Documents\python\gitclone\SR\Cell_SR\data\overlay512\0_overlay.tif"
-lr_img = Image.open(top_path)
-hr_img = Image.open(h_top_path)
-lr,hr = my_transfroms(lr_img,hr_img)
-# trans = transforms.Compose([transforms.RandomCrop(1500,padding=True,pad_if_needed=True)])
-# out = trans(img)
-print(lr.size,hr.size)
-lr.show()
-hr.show()
+a = [1,2,4]
+for i,j in enumerate(a):
+    print(i,j)

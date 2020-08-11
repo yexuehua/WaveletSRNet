@@ -163,8 +163,12 @@ def main():
                     mse = criterion_m(prediction, target)
                     psnr = 10 * log10(1 / (mse.item()) )
                     avg_psnr += psnr
-                                                    
-                    save_images(prediction, "Epoch_{:03d}_Iter_{:06d}_{:02d}_o.jpg".format(epoch, iteration, titer), 
+
+                    save_images(input, "input_Epoch_{:03d}_{:02d}_o.jpg".format(epoch, titer),
+                                path=opt.outf, nrow=opt.nrow)
+                    save_images(target, "target_Epoch_{:03d}_{:02d}_o.jpg".format(epoch, titer),
+                                path=opt.outf, nrow=opt.nrow)
+                    save_images(prediction, "pred_Epoch_{:03d}_{:02d}_o.jpg".format(epoch, titer),
                                 path=opt.outf, nrow=opt.nrow)
                     
                     
