@@ -18,6 +18,7 @@ from torch.autograd import Variable
 from networks import *
 from math import log10
 import torchvision
+from torchsummary import summary
 import cv2
 
 parser = argparse.ArgumentParser()
@@ -75,6 +76,8 @@ def main():
     if opt.cuda:
         torch.cuda.manual_seed_all(opt.manualSeed)
 
+
+    device = torch.device('cuda')
     cudnn.benchmark = True
 
     if torch.cuda.is_available() and not opt.cuda:
@@ -91,7 +94,7 @@ def main():
       is_scale_back = False
     
     #--------------build models--------------------------
-    srnet = NetSR(opt.upscale, num_layers_res=opt.num_layers_res)
+    srnet = NetSR(1, num_layers_res=opt.num_layers_res)
     if opt.pretrained:
         if os.path.isfile(opt.pretrained):
             print("=> loading model '{}'".format(opt.pretrained))
@@ -107,17 +110,20 @@ def main():
         else:
             print("=> no model found at '{}'".format(opt.pretrained))
     print(srnet)
+    #summary(srnet,(3,256,256))
     
-    wavelet_dec = WaveletTransform(scale=opt.upscale, dec=True)
-    wavelet_rec = WaveletTransform(scale=opt.upscale, dec=False)          
-     
+    wavelet_dec = WaveletTransform(scale=1, dec=True)
+    wavelet_rec = WaveletTransform(scale=1, dec=False)          
+    #summary(wavelet_dec,(3,256,256))
+    #summary(wavelet_rec,(48,64,64))
+
     criterion_m = nn.MSELoss(size_average=True)
-    
+
     if opt.cuda:
-      srnet = srnet.cuda()      
-      wavelet_dec = wavelet_dec.cuda()
-      wavelet_rec = wavelet_rec.cuda()
-      criterion_m = criterion_m.cuda()
+        srnet = srnet.to("cuda:0")      
+        wavelet_dec = wavelet_dec.to(device)
+        wavelet_rec = wavelet_rec.to(device)
+        criterion_m = criterion_m.to(device)
      
     
     optimizer_sr = optim.Adam(srnet.parameters(), lr=opt.lr, betas=(opt.momentum, 0.999), weight_decay=0.0005)
@@ -135,6 +141,7 @@ def main():
 
     start_time = time.time()
     srnet.train()
+    print("-------start training.......--------")
     #----------------Train by epochs--------------------------
     for epoch in range(opt.start_epoch, opt.nEpochs + 1):  
         if epoch%opt.save_iter == 0:
@@ -148,13 +155,13 @@ def main():
                 for titer, batch in enumerate(test_data_loader,0):
                     input, target = Variable(batch[0]), Variable(batch[1])
                     if opt.cuda:
-                        input = input.cuda()
-                        target = target.cuda()    
+                        input = input.to(device)
+                        target = target.to(device)
 
                     wavelets = forward_parallel(srnet, input, opt.ngpu)                    
                     prediction = wavelet_rec(wavelets)
                     mse = criterion_m(prediction, target)
-                    psnr = 10 * log10(1 / (mse.data[0]) )
+                    psnr = 10 * log10(1 / (mse.item()) )
                     avg_psnr += psnr
                                                     
                     save_images(prediction, "Epoch_{:03d}_Iter_{:06d}_{:02d}_o.jpg".format(epoch, iteration, titer), 
@@ -167,8 +174,8 @@ def main():
             #--------------train------------
             input, target = Variable(batch[0]), Variable(batch[1], requires_grad=False)          
             if opt.cuda:
-              input = input.cuda()
-              target = target.cuda()
+              input = input.to(device)
+              target = target.to(device)
               
             target_wavelets = wavelet_dec(target)
           
@@ -192,8 +199,7 @@ def main():
             optimizer_sr.step()
             
             info = "===> Epoch[{}]({}/{}): time: {:4.4f}:".format(epoch, iteration, len(train_data_loader), time.time()-start_time)
-            info += "Rec: {:.4f}, {:.4f}, {:.4f}, Texture: {:.4f}".format(loss_lr.data[0], loss_sr.data[0], 
-                                loss_img.data[0], loss_textures.data[0])            
+            info += "Rec: {:.4f}, {:.4f}, {:.4f},Texture:{:.4f}".format(loss_lr.item(), loss_sr.item(), loss_img.item(), loss_textures.item())            
                           
             print(info)
              
@@ -216,7 +222,7 @@ def save_checkpoint(model, epoch, iteration, prefix=""):
 
 def save_images(images, name, path, nrow=10):   
   #print(images.size())
-  img = images.cpu()
+  img = images.to("cpu")
   im = img.data.numpy().astype(np.float32)
   #print(im.shape)       
   im = im.transpose(0,2,3,1)

@@ -24,12 +24,13 @@ def loadFromFile(path, datasize):
     print("Load from file %s" % path)
     df = pd.read_csv(path)
     data = df["overlay256"].values
-    label = df["overlay512"]
+    label = df["overlay512"].values
     return data, label     
     
-def load_image(hr_file_path,lr_file_path):
+def load_image(lr_file_path,hr_file_path):
     hr_img = Image.open(hr_file_path)
     lr_img = Image.open(lr_file_path)
+    return lr_img, hr_img
       
       
 class ImageDatasetFromFile(data.Dataset):
@@ -40,19 +41,24 @@ class ImageDatasetFromFile(data.Dataset):
         self.label_filenames = label_list
         self.root_path = root_path
                        
-        self.input_transform = transforms.Compose([ 
-                                   transforms.ToTensor()                                                                      
+        self.input_transform = transforms.Compose([
+                                   
+            transforms.RandomCrop(128,128),
+            transforms.ToTensor()                                                                      
+                               ])
+        self.target_transform = transforms.Compose([
+            transforms.RandomCrop(256,256),
+            transforms.ToTensor()
                                ])
         
 
     def __getitem__(self, index):
-          
-        lr, hr = load_image(join(self.root_path, self.image_filenames[index]),
-                            join(self.root_path, self.label_filenames[index]))
+        
+        lr, hr = load_image(join(self.root_path, self.image_filenames[index]),join(self.root_path, self.label_filenames[index]))
         
         
         input = self.input_transform(lr)
-        target = self.input_transform(hr)
+        target = self.target_transform(hr)
         
         return input, target
 
